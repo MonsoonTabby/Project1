@@ -32,15 +32,24 @@
     </div>
 
     <script>
-        // เปลี่ยน URL นี้เป็น URL ที่ได้จาก ngrok ของคุณ
         const NGROK_URL = "https://nonvascular-foundational-maverick.ngrok-free.dev";
 
-        // 1. ฟังก์ชันดึงข้อมูลจาก Node-RED (SQL -> Node-RED -> HTML)
+        // 🔹 Header สำหรับ ngrok (ใช้ร่วมกัน)
+        const NGROK_HEADERS = {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true"
+        };
+
+        // 1️⃣ ดึงข้อมูลจาก Node-RED
         async function fetchData() {
             try {
-                const response = await fetch(`${NGROK_URL}/get-data`);
+                const response = await fetch(`${NGROK_URL}/get-data`, {
+                    method: "GET",
+                    headers: NGROK_HEADERS
+                });
+
                 const data = await response.json();
-                
+
                 document.getElementById('temp').innerText = data.temperature;
                 document.getElementById('humi').innerText = data.humidity;
                 document.getElementById('weight').innerText = data.weight;
@@ -49,16 +58,16 @@
             }
         }
 
-        // 2. ฟังก์ชันส่ง Timestamp กลับไป (HTML -> Node-RED)
+        // 2️⃣ ส่ง Timestamp ไป Node-RED
         async function sendTimestamp() {
             const statusTag = document.getElementById('status');
             statusTag.innerText = "กำลังส่ง...";
-            
+
             try {
                 const response = await fetch(`${NGROK_URL}/post-timestamp`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
+                    method: "POST",
+                    headers: NGROK_HEADERS,
+                    body: JSON.stringify({
                         timestamp: new Date().toISOString(),
                         action: "button_clicked"
                     })
@@ -66,16 +75,17 @@
 
                 if (response.ok) {
                     statusTag.innerText = "ส่งสำเร็จ!";
+                } else {
+                    statusTag.innerText = "Server ตอบกลับผิดพลาด";
                 }
             } catch (error) {
                 statusTag.innerText = "ส่งล้มเหลว ตรวจสอบ ngrok";
             }
         }
 
-        // สั่งให้ดึงข้อมูลทุกๆ 5 วินาที
+        // 🔁 ดึงข้อมูลทุก 5 วินาที
         setInterval(fetchData, 5000);
-        fetchData(); // ดึงครั้งแรกทันทีที่เปิดเว็บ
+        fetchData();
     </script>
 </body>
 </html>
-
